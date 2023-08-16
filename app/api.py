@@ -1,15 +1,23 @@
-from flask import Blueprint, jsonify,json,request,render_template,session
+from flask import Blueprint, jsonify,json,request,send_from_directory,abort,current_app
 from datetime import datetime
 from .extensions import obtener_conexion
 from .models.ModeloUsuario import ModeloUsuario
+import os
 api_bp = Blueprint('api_bp', __name__)
 
 
 
-@api_bp.route('/nota_venta', methods=['POST'])
+@api_bp.route('/nota_venta')
 def nota_venta():
     venta = [1, 2]
     return venta
+@api_bp.route('/test')
+def test():
+    venta = {
+        "data": [2,3,4,5],
+        "success" : "true"
+    }
+    return jsonify(venta)
 
 # OBTENCION DE DATOS DE DOCUMENTO (BOLETA,FACTURA Y GUIA)
 def busqueda_docs_fecha(inicio, fin):
@@ -115,7 +123,7 @@ def obt_guia(folio=None, fecha1=None, fecha2=None, cliente=None):
                 print('buscando guias x folio ....')
 
                 sql = """SELECT folio,fecha,interno,nombre,JSON_EXTRACT(detalle,'$.vendedor'),vinculaciones,JSON_EXTRACT(detalle,'$.estado_retiro'),
-                JSON_EXTRACT(detalle,'$.revisor'),despacho,historial_retiro  from guia where folio = %s """
+                JSON_EXTRACT(detalle,'$.revisor'),despacho,historial_retiro,JSON_EXTRACT(detalle, '$.tipo_doc'), JSON_EXTRACT(detalle, '$.doc_ref')  from guia where folio = %s """
                 cursor.execute(sql, folio)
                 detalle = cursor.fetchall()
 
@@ -125,14 +133,14 @@ def obt_guia(folio=None, fecha1=None, fecha2=None, cliente=None):
                 fin = str(fecha2) + ' 23:59'
                 #,vinculaciones,estado_retiro,revisor,despacho,historial_retiro
                 sql = """SELECT folio,fecha,interno,nombre,JSON_EXTRACT(detalle,'$.vendedor'),vinculaciones,JSON_EXTRACT(detalle,'$.estado_retiro'),
-                JSON_EXTRACT(detalle,'$.revisor'),despacho,historial_retiro,JSON_EXTRACT(detalle, '$.tipo_doc'), JSON_EXTRACT(detalle, '$.doc_ref') from guia where fecha between %s and %s"""
+                JSON_EXTRACT(detalle,'$.revisor'),despacho,historial_retiro,JSON_EXTRACT(detalle, '$.tipo_doc'), JSON_EXTRACT(detalle, '$.doc_ref') from guia where fecha between %s and %s ORDER BY fecha desc """
                 cursor.execute(sql, (inicio, fin))
                 detalle = cursor.fetchall()
-            """ elif cliente:
+            elif cliente:
                 print('buscando guias x nombre cliente ...')
-                sql = "SELECT folio,fecha,interno,nombre,,JSON_EXTRACT(detalle,'$.vendedor')   from guia where nombre like '%" + cliente + "%'"
+                sql = "SELECT folio,fecha,interno,nombre,JSON_EXTRACT(detalle,'$.vendedor'),vinculaciones,JSON_EXTRACT(detalle,'$.estado_retiro'),JSON_EXTRACT(detalle,'$.revisor'),despacho,historial_retiro,JSON_EXTRACT(detalle, '$.tipo_doc'), JSON_EXTRACT(detalle, '$.doc_ref')  from guia where nombre like '%" + cliente + "%' ORDER BY fecha desc "
                 cursor.execute(sql)
-                detalle = cursor.fetchall() """
+                detalle = cursor.fetchall()
 
             return jsonify(detalle)
     finally:
@@ -150,7 +158,7 @@ def obt_boleta(folio=None, fecha1=None, fecha2=None, cliente=None):
             print('llego a buscar guias ..')
             if folio:
                 print('buscando boleta x folio ....')
-                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro from nota_venta where nro_boleta = %s"
+                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro from nota_venta where nro_boleta = %s ORDER BY fecha desc "
                 cursor.execute(sql, folio)
                 detalle = cursor.fetchall()
                 # print(detalle)
@@ -161,17 +169,17 @@ def obt_boleta(folio=None, fecha1=None, fecha2=None, cliente=None):
                 fin = str(fecha2) + ' 23:59'
                 #interno,vendedor,folio,monto_total,nro_boleta,nombre,vinculaciones,adjuntos,estado_retiro,revisor,despacho,fecha,historial_retiro
                 #nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro
-                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro  from nota_venta where folio = 0 and ( fecha between %s and %s) "
+                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro  from nota_venta where folio = 0 and ( fecha between %s and %s) ORDER BY fecha desc "
                 cursor.execute(sql, (inicio, fin))
                 detalle = cursor.fetchall()
                 # print(detalle)
             # TODAS LOS CLIENTES SON CLIENTES BOLETAS.
-            '''elif cliente:
+            """ elif cliente:
                 print('buscando boleta x nombre cliente ...')
-                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',adjuntos,monto_total,estado_retiro,revisor from nota_venta where folio = 0 and ( fecha between %s and %s) " 
+                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro from nota_venta where folio = 0 and ( fecha between %s and %s) ORDER BY fecha desc " 
                 cursor.execute( sql )
                 detalle = cursor.fetchall()
-                print(detalle)'''
+                print(detalle) """
 
             return jsonify(detalle)
     finally:
@@ -189,7 +197,7 @@ def obt_factura(folio=None, fecha1=None, fecha2=None, cliente=None):
             print('llego a buscar facturas ..')
             if folio:
                 print('buscando factura x folio ....')
-                sql = "SELECT folio,fecha,interno,nombre,vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro  from nota_venta where folio = %s"
+                sql = "SELECT folio,fecha,interno,nombre,vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro  from nota_venta where folio = %s  ORDER BY fecha desc"
                 cursor.execute(sql, folio)
                 detalle = cursor.fetchall()
                 # print(detalle)
@@ -198,16 +206,16 @@ def obt_factura(folio=None, fecha1=None, fecha2=None, cliente=None):
                 print('buscando factura x fecha ....')
                 inicio = str(fecha1) + ' 00:00'
                 fin = str(fecha2) + ' 23:59'
-                sql = "SELECT folio,fecha,interno,nombre,vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro  from nota_venta where nro_boleta = 0 and ( fecha between %s and %s) "
+                sql = "SELECT folio,fecha,interno,nombre,vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro  from nota_venta where nro_boleta = 0 and ( fecha between %s and %s) ORDER BY fecha desc"
                 cursor.execute(sql, (inicio, fin))
                 detalle = cursor.fetchall()
                 # print(detalle)
-            """ elif cliente:
+            elif cliente:
                 print('buscando factura x nombre cliente ...')
-                sql = "SELECT folio,fecha,interno,nombre,vendedor  from nota_venta where nro_boleta = 0 and nombre like  '%" + cliente + "%'"
+                sql = "SELECT folio,fecha,interno,nombre,vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro   from nota_venta where nro_boleta = 0 and nombre like  '%" + cliente + "%' ORDER BY fecha desc"
                 cursor.execute(sql)
                 detalle = cursor.fetchall()
-                # print(detalle) """
+                # print(detalle)
 
             return jsonify(detalle)
     finally:
@@ -225,7 +233,7 @@ def obt_creditos(folio=None, fecha1=None, fecha2=None, cliente=None):
             print('llego a buscar creditos ..')
             if folio:
                 print('buscando creditos x folio ....')
-                sql = "SELECT folio,fecha,interno,nombre from nota_credito where folio = %s"
+                sql = "SELECT folio,fecha,interno,nombre,detalle,'No Registrado' from nota_credito where folio = %s"
                 cursor.execute(sql, folio)
                 detalle = cursor.fetchall()
                 # print(detalle)
@@ -234,13 +242,13 @@ def obt_creditos(folio=None, fecha1=None, fecha2=None, cliente=None):
                 print('buscando creditos x fecha ....')
                 inicio = str(fecha1) + ' 00:00'
                 fin = str(fecha2) + ' 23:59'
-                sql = "SELECT folio,fecha,interno,nombre  from nota_credito where fecha between %s and %s "
+                sql = "SELECT folio,fecha,interno,nombre,detalle,'No Registrado'  from nota_credito where fecha between %s and %s "
                 cursor.execute(sql, (inicio, fin))
                 detalle = cursor.fetchall()
                 # print(detalle)
             elif cliente:
                 print('buscando creditos x nombre cliente ...')
-                sql = "SELECT folio,fecha,interno,nombre from nota_credito where nombre like  '%" + cliente + "%'"
+                sql = "SELECT folio,fecha,interno,nombre,detalle,'No Registrado' from nota_credito where nombre like  '%" + cliente + "%'"
                 cursor.execute(sql)
                 detalle = cursor.fetchall()
                 # print(detalle)
@@ -262,7 +270,7 @@ def obt_ordenes(folio=None, tipo=None, fecha1=None, fecha2=None, cliente=None):
             print('llego a buscar orden de: ' + tipo + ' ...')
             if folio:
                 print('buscando orden x folio ....')
-                sql = "SELECT nro_orden,fecha_orden,telefono,nombre,detalle, JSON_EXTRACT(detalle, '$.creado_por'),despacho,JSON_EXTRACT(extra, '$.estado'),tipo_doc ,nro_doc from orden_" + \
+                sql = "SELECT nro_orden,fecha_orden,0,nombre, detalle, JSON_EXTRACT(detalle ,'$.creado_por') ,tipo_doc ,nro_doc  from orden_" + \
                     tipo + " where nro_orden = " + str(folio)
                 cursor.execute(sql)
                 detalle = cursor.fetchall()
@@ -272,14 +280,14 @@ def obt_ordenes(folio=None, tipo=None, fecha1=None, fecha2=None, cliente=None):
                 print('buscando orden x fecha ....')
                 inicio = str(fecha1) + ' 00:00'
                 fin = str(fecha2) + ' 23:59'
-                sql = "SELECT nro_orden,fecha_orden,telefono,nombre,detalle, JSON_EXTRACT(detalle, '$.creado_por'),despacho,JSON_EXTRACT(extra, '$.estado'),tipo_doc ,nro_doc from orden_" + \
+                sql = "SELECT nro_orden,fecha_orden,0,nombre, detalle, JSON_EXTRACT(detalle ,'$.creado_por') ,tipo_doc ,nro_doc from orden_" + \
                     tipo + " where fecha_orden between '" + inicio + "' and  '" + fin + "'"
                 cursor.execute(sql)
                 detalle = cursor.fetchall()
                 # print(detalle)
             elif cliente:
                 print('buscando orden x nombre cliente ...')
-                sql = "SELECT nro_orden,fecha_orden,telefono,nombre,detalle, JSON_EXTRACT(detalle, '$.creado_por'),despacho,JSON_EXTRACT(extra, '$.estado'),tipo_doc ,nro_doc  from orden_" + \
+                sql = "SELECT nro_orden,fecha_orden,0,nombre, detalle, JSON_EXTRACT(detalle ,'$.creado_por') ,tipo_doc ,nro_doc  from orden_" + \
                     tipo + " where nombre like  '%" + cliente + "%'"
                 cursor.execute(sql)
                 detalle = cursor.fetchall()
@@ -302,7 +310,7 @@ def actualizar_nota_venta():
     print('dato 2: ',dato[2])
     print('----- datos historial --------')
     # historial
-    revisor = 'Huber Test svelte'
+    revisor = dato[6]
     fecha = datetime.now()
     detalle = {
         "revisor": revisor,
@@ -370,7 +378,7 @@ def actualizar_guia():
     print('----- datos historial --------')
     # historial
     fecha = datetime.now()
-    revisor = 'Huber Test Svelte'
+    revisor = dato[6]
     detalle = {
         "revisor": revisor,
         "fecha": str(fecha.strftime("%d-%m-%Y %H:%M:%S")),
@@ -577,15 +585,13 @@ def login():
             print('Usuario encontrado: ', consulta)
             if consulta[8] == 'porteria':  # or consulta[8] == 'area':
                 if consulta[2] == contra:
-                    session['tipo'] = consulta[8]
-                    session['usuario'] = consulta[10]
                     print('usuario con privilegios')
                     success = True
                     msg = "Login exitoso."
                     datos_usuario = {
                         "id" : consulta[0],
                         "tipo" : consulta[8],
-                        "nombre": nombre
+                        "nombre": consulta[10]
                     }
                 else:
                     print('Contraseña invalida')
@@ -598,9 +604,77 @@ def login():
             print("usuario no encontrado, en la bd")
 
         return jsonify(success = success , msg = msg, datos_usuario = datos_usuario)
+    
+@api_bp.route("/releases", methods=["POST"])
+def get_releases():
+    releases = os.listdir(current_app.config["RELEASE_FOLDER"])
+    return jsonify(releases)
 
-@api_bp.route('/logout')
-def logout():
-    # remove the username from the session if it's there
-    session.pop('usuario', None)
-    return "usuario deslogueado"
+@api_bp.route('/releases/<filename>')
+def download_release(filename):
+    try:
+        return send_from_directory(current_app.config["RELEASE_FOLDER"], filename, as_attachment=True)
+    except FileNotFoundError:
+        abort(404)
+
+#DESPACHO ATRASADO
+@api_bp.route('/despachos_atrasados_defecto', methods=['POST'])
+def atraso():
+    print('---- OBTENIENDO DESPACHOS ATRASADOS X 3 DIAS -----')
+    miConexion = obtener_conexion()
+    try:
+        with miConexion.cursor() as cursor:
+            sql = '''SELECT * 
+                FROM nota_venta
+                WHERE nro_boleta = 0 and despacho = "SI" AND (DATEDIFF(NOW(), fecha) >= 3) and estado_retiro != "COMPLETO" '''
+            cursor.execute(sql)
+            facturas = cursor.fetchall()
+
+            sql = '''SELECT *
+                FROM nota_venta
+                WHERE folio = 0 and despacho = "SI" AND (DATEDIFF(NOW(), fecha) >= 3) and estado_retiro != "COMPLETO" '''
+            cursor.execute(sql)
+            boletas = cursor.fetchall()
+
+            sql = '''SELECT *
+                FROM guia
+                WHERE despacho = "SI" AND (DATEDIFF(NOW(), fecha) >= 3) and detalle->"$.estado_retiro" != "COMPLETO" '''
+            cursor.execute(sql)
+            guias = cursor.fetchall()
+
+            return jsonify(
+                boletas=boletas,
+                facturas=facturas,
+                guias=guias
+            )
+    finally:
+        miConexion.close()
+@api_bp.route('/estadisticas/despachos-atrasados', methods=['POST'])
+def despachos_atrasados():
+    ventas = []
+    guias = []
+    miConexion = obtener_conexion()
+    try:
+        with miConexion.cursor() as cursor:
+            sql1 ='''SELECT COUNT(*) 
+                FROM nota_venta
+                WHERE nro_boleta = 0 and despacho = "SI" AND (DATEDIFF(NOW(), fecha) >= 3) and estado_retiro != "COMPLETO" '''
+            cursor.execute(sql1)
+            boletas = cursor.fetchall()
+
+            sql2 = '''SELECT *
+                FROM nota_venta
+                WHERE folio = 0 and despacho = "SI" AND (DATEDIFF(NOW(), fecha) >= 3) and estado_retiro != "COMPLETO" '''
+            cursor.execute(sql1)
+            facturas = cursor.fetchall()
+
+            sql3 = "SELECT * from guia where despacho is not null and despacho = 'SI' and detalle->'$.estado_retiro' != 'COMPLETO' "
+            cursor.execute(sql3)
+            guias = cursor.fetchall()
+
+            return jsonify(
+                ventas=ventas,
+                guias=guias
+            )
+    finally:
+        miConexion.close()

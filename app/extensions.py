@@ -1,7 +1,5 @@
 import pymysql
 from flask import current_app
-
-
 def obtener_conexion():
     return pymysql.connect(
         host=current_app.config['HOST'],

@@ -1,4 +1,4 @@
-FROM python:3.8.5
+FROM python:3.8.5-slim-buster
 
 WORKDIR .
 
@@ -7,9 +7,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-
+RUN mkdir /releases
 # Definición de variables de entorno
+ENV TZ=America/Santiago 
+
 ENV FLASK_RUN_PORT=4500
 ENV FLASK_RUN_HOST=0.0.0.0
+ENV FLASK_RUN_DEBUG=true
+ENV DEV_HOST=${DEV_HOST:-host.docker.internal}
 
-CMD ["flask", "run", "--debug"]
+CMD ["flask", "run"]
