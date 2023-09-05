@@ -319,6 +319,8 @@ def actualizar_nota_venta():
         "antes": dato[4],
         "despues": dato[5]
     }
+    vale_id = dato[7]
+    print("dato 6(vale_id): ", vale_id)
     historial = json.dumps(detalle)
     print(historial)
 
@@ -360,6 +362,14 @@ def actualizar_nota_venta():
                     cursor.execute(sql, (nuevo_historial, dato[2]))
                 except KeyError:
                     print(' llave "lista_historial" no encontrado. Historial NO creado')
+            #ACTUALIZAR FECHA REAL VALE DESPACHO
+            if vale_id:
+                print("|(DOCUMENTO CON VALE DESPACHO)  Actualizando fecha real vale despacho ...")
+                fecha_real = datetime.now()
+                sql = "update vale_despacho set fecha_real = %s where vale_id = %s"
+                cursor.execute(sql, (str(fecha_real), vale_id ))
+            else:
+                print("(DOCUMENTO SIN VALE DESPACHO) : NO SE ACTUALIZA FECHA REAL.")
 
             miConexion.commit()
             return jsonify(data=True, message="Cantidad retirada actualizada")
@@ -386,6 +396,8 @@ def actualizar_guia():
         "antes": dato[4],
         "despues": dato[5]
     }
+    vale_id = dato[7]
+    print("dato 6(vale_id): ", vale_id)
     historial = json.dumps(detalle)
     print(historial)
 
@@ -443,6 +455,15 @@ def actualizar_guia():
                     cursor.execute(sql, (nuevo_historial, dato[2]))
                 except KeyError:
                     print(' llave "lista_historial" no encontrado. Historial NO creado')
+            
+            #ACTUALIZAR FECHA REAL VALE DESPACHO
+            if vale_id:
+                print("|(DOCUMENTO CON VALE DESPACHO)  Actualizando fecha real vale despacho ...")
+                fecha_real = datetime.now()
+                sql = "update vale_despacho set fecha_real = %s where vale_id = %s"
+                cursor.execute(sql, (str(fecha_real), vale_id ))
+            else:
+                print("(DOCUMENTO SIN VALE DESPACHO) : NO SE ACTUALIZA FECHA REAL.")
 
             miConexion.commit()
 
