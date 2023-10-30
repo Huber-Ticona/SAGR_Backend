@@ -3,6 +3,7 @@ from datetime import datetime
 from .extensions import obtener_conexion
 from .models.ModeloUsuario import ModeloUsuario
 import os
+
 api_bp = Blueprint('api_bp', __name__)
 
 
@@ -123,7 +124,7 @@ def obt_guia(folio=None, fecha1=None, fecha2=None, cliente=None):
                 print('buscando guias x folio ....')
 
                 sql = """SELECT folio,fecha,interno,nombre,JSON_EXTRACT(detalle,'$.vendedor'),vinculaciones,JSON_EXTRACT(detalle,'$.estado_retiro'),
-                JSON_EXTRACT(detalle,'$.revisor'),despacho,historial_retiro,JSON_EXTRACT(detalle, '$.tipo_doc'), JSON_EXTRACT(detalle, '$.doc_ref')  from guia where folio = %s """
+                JSON_EXTRACT(detalle,'$.revisor'),despacho,historial_retiro,JSON_EXTRACT(detalle, '$.tipo_doc'), JSON_EXTRACT(detalle, '$.doc_ref'),detalle  from guia where folio = %s """
                 cursor.execute(sql, folio)
                 detalle = cursor.fetchall()
 
@@ -133,12 +134,12 @@ def obt_guia(folio=None, fecha1=None, fecha2=None, cliente=None):
                 fin = str(fecha2) + ' 23:59'
                 #,vinculaciones,estado_retiro,revisor,despacho,historial_retiro
                 sql = """SELECT folio,fecha,interno,nombre,JSON_EXTRACT(detalle,'$.vendedor'),vinculaciones,JSON_EXTRACT(detalle,'$.estado_retiro'),
-                JSON_EXTRACT(detalle,'$.revisor'),despacho,historial_retiro,JSON_EXTRACT(detalle, '$.tipo_doc'), JSON_EXTRACT(detalle, '$.doc_ref') from guia where fecha between %s and %s ORDER BY fecha desc """
+                JSON_EXTRACT(detalle,'$.revisor'),despacho,historial_retiro,JSON_EXTRACT(detalle, '$.tipo_doc'), JSON_EXTRACT(detalle, '$.doc_ref'),detalle from guia where fecha between %s and %s ORDER BY fecha desc """
                 cursor.execute(sql, (inicio, fin))
                 detalle = cursor.fetchall()
             elif cliente:
                 print('buscando guias x nombre cliente ...')
-                sql = "SELECT folio,fecha,interno,nombre,JSON_EXTRACT(detalle,'$.vendedor'),vinculaciones,JSON_EXTRACT(detalle,'$.estado_retiro'),JSON_EXTRACT(detalle,'$.revisor'),despacho,historial_retiro,JSON_EXTRACT(detalle, '$.tipo_doc'), JSON_EXTRACT(detalle, '$.doc_ref')  from guia where nombre like '%" + cliente + "%' ORDER BY fecha desc "
+                sql = "SELECT folio,fecha,interno,nombre,JSON_EXTRACT(detalle,'$.vendedor'),vinculaciones,JSON_EXTRACT(detalle,'$.estado_retiro'),JSON_EXTRACT(detalle,'$.revisor'),despacho,historial_retiro,JSON_EXTRACT(detalle, '$.tipo_doc'), JSON_EXTRACT(detalle, '$.doc_ref'),detalle  from guia where nombre like '%" + cliente + "%' ORDER BY fecha desc "
                 cursor.execute(sql)
                 detalle = cursor.fetchall()
 
@@ -158,7 +159,7 @@ def obt_boleta(folio=None, fecha1=None, fecha2=None, cliente=None):
             print('llego a buscar guias ..')
             if folio:
                 print('buscando boleta x folio ....')
-                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro from nota_venta where nro_boleta = %s ORDER BY fecha desc "
+                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro,monto_total from nota_venta where nro_boleta = %s ORDER BY fecha desc "
                 cursor.execute(sql, folio)
                 detalle = cursor.fetchall()
                 # print(detalle)
@@ -169,14 +170,14 @@ def obt_boleta(folio=None, fecha1=None, fecha2=None, cliente=None):
                 fin = str(fecha2) + ' 23:59'
                 #interno,vendedor,folio,monto_total,nro_boleta,nombre,vinculaciones,adjuntos,estado_retiro,revisor,despacho,fecha,historial_retiro
                 #nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro
-                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro  from nota_venta where folio = 0 and ( fecha between %s and %s) ORDER BY fecha desc "
+                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro,monto_total  from nota_venta where folio = 0 and ( fecha between %s and %s) ORDER BY fecha desc "
                 cursor.execute(sql, (inicio, fin))
                 detalle = cursor.fetchall()
                 # print(detalle)
             # TODAS LOS CLIENTES SON CLIENTES BOLETAS.
             """ elif cliente:
                 print('buscando boleta x nombre cliente ...')
-                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro from nota_venta where folio = 0 and ( fecha between %s and %s) ORDER BY fecha desc " 
+                sql = "SELECT nro_boleta,fecha,interno,'Cliente Boleta',vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro,monto_total from nota_venta where folio = 0 and ( fecha between %s and %s) ORDER BY fecha desc " 
                 cursor.execute( sql )
                 detalle = cursor.fetchall()
                 print(detalle) """
@@ -197,7 +198,7 @@ def obt_factura(folio=None, fecha1=None, fecha2=None, cliente=None):
             print('llego a buscar facturas ..')
             if folio:
                 print('buscando factura x folio ....')
-                sql = "SELECT folio,fecha,interno,nombre,vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro  from nota_venta where folio = %s  ORDER BY fecha desc"
+                sql = "SELECT folio,fecha,interno,nombre,vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro,monto_total  from nota_venta where folio = %s  ORDER BY fecha desc"
                 cursor.execute(sql, folio)
                 detalle = cursor.fetchall()
                 # print(detalle)
@@ -206,13 +207,13 @@ def obt_factura(folio=None, fecha1=None, fecha2=None, cliente=None):
                 print('buscando factura x fecha ....')
                 inicio = str(fecha1) + ' 00:00'
                 fin = str(fecha2) + ' 23:59'
-                sql = "SELECT folio,fecha,interno,nombre,vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro  from nota_venta where nro_boleta = 0 and ( fecha between %s and %s) ORDER BY fecha desc"
+                sql = "SELECT folio,fecha,interno,nombre,vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro,monto_total  from nota_venta where nro_boleta = 0 and ( fecha between %s and %s) ORDER BY fecha desc"
                 cursor.execute(sql, (inicio, fin))
                 detalle = cursor.fetchall()
                 # print(detalle)
             elif cliente:
                 print('buscando factura x nombre cliente ...')
-                sql = "SELECT folio,fecha,interno,nombre,vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro   from nota_venta where nro_boleta = 0 and nombre like  '%" + cliente + "%' ORDER BY fecha desc"
+                sql = "SELECT folio,fecha,interno,nombre,vendedor,vinculaciones,estado_retiro,revisor,despacho,historial_retiro,monto_total   from nota_venta where nro_boleta = 0 and nombre like  '%" + cliente + "%' ORDER BY fecha desc"
                 cursor.execute(sql)
                 detalle = cursor.fetchall()
                 # print(detalle)
@@ -362,12 +363,45 @@ def actualizar_nota_venta():
                     cursor.execute(sql, (nuevo_historial, dato[2]))
                 except KeyError:
                     print(' llave "lista_historial" no encontrado. Historial NO creado')
+
             #ACTUALIZAR FECHA REAL VALE DESPACHO
             if vale_id:
                 print("|(DOCUMENTO CON VALE DESPACHO)  Actualizando fecha real vale despacho ...")
-                fecha_real = datetime.now()
-                sql = "update vale_despacho set fecha_real = %s where vale_id = %s"
-                cursor.execute(sql, (str(fecha_real), vale_id ))
+
+                """ Posiblemente si existe fecha real en vale despacho -> documento dado de baja. """
+                # Verificar si existe la fecha real
+                sql = "select vale_id,fecha_real from vale_despacho where vale_id = %s"
+                cursor.execute(sql,  vale_id )
+                respuesta = cursor.fetchone()
+                fecha_real = respuesta[1]
+                print(f"(FECHA REAL) : {fecha_real}")
+
+                if  fecha_real == None:
+                    print(f"|Actualizando fecha real vale despacho -> {vale_id}")
+                    fecha_real = datetime.now()
+                    sql = "update vale_despacho set fecha_real = %s where vale_id = %s"
+                    cursor.execute(sql, (str(fecha_real), vale_id ))
+
+                    # Obtener numero de telefono
+                    sql = "select vale_id,telefono from vale_despacho where vale_id = %s"
+                    cursor.execute(sql,  vale_id )
+                    respuesta = cursor.fetchone()
+                    telefono = respuesta[1]
+                    new_telefono = telefono.replace(' ' ,'')
+                    new_telefono = new_telefono.replace('+' ,'')
+
+                    print(f"Telefono : {telefono} | new_telefono: {new_telefono}")
+
+                    # Enviar plantilla
+                    plantilla = "despacho_domicilio_1"
+                    enviar_template(plantilla , new_telefono)
+
+                else:
+                    print('|Documento con fecha real -> dado de BAJA.')
+                    print('|No se actualiza la fecha real.\nNo se envia mensaje whatsapp.')
+
+
+
             else:
                 print("(DOCUMENTO SIN VALE DESPACHO) : NO SE ACTUALIZA FECHA REAL.")
 
@@ -699,3 +733,17 @@ def despachos_atrasados():
             )
     finally:
         miConexion.close()
+
+def enviar_template(plantilla,telefono):
+    print("******* Enviando plantilla... ********")
+    messenger = current_app.messenger
+    #enviar template
+    template_id = plantilla  # Reemplaza con el ID de tu plantilla
+    components = []  # Reemplaza con tus componentes
+    # Enviar el mensaje usando la plantilla y los componentes
+    response = messenger.send_template(template_id, str(telefono) ,components, lang="es_AR")
+    
+    print(f"(RESPUESTA JSON) : {response} | type: {type(response)}")
+    print("******* Plantilla Enviada. **********")
+
+

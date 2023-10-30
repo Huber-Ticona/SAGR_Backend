@@ -7,6 +7,9 @@ class Config(object):
     PROYECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     RELEASE_FOLDER = os.path.join(PROYECT_ROOT, 'releases')
     UPLOAD_FOLDER = os.path.join(PROYECT_ROOT, 'respaldo_adjuntos')
+    TOKEN = os.getenv('TOKEN')
+    PHONE_NUMBER_ID = os.getenv('PHONE_NUMBER_ID')
+    TEST_NUMBER_ID = os.getenv('TEST_NUMBER_ID')
     
 class DevelopConfig(Config):
     HOST = os.getenv('DEV_HOST')
