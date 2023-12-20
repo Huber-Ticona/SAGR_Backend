@@ -375,13 +375,15 @@ def actualizar_nota_venta():
                 respuesta = cursor.fetchone()
                 fecha_real = respuesta[1]
                 print(f"(FECHA REAL) : {fecha_real}")
+                print(f"|Actualizando fecha real vale despacho -> {vale_id}")
+                fecha_real = None
+                if dato[0] == "COMPLETO":
+                    fecha_real = str(datetime.now())
+                print("| new fecha_real: ", fecha_real)
+                sql = "update vale_despacho set fecha_real = %s where vale_id = %s"
+                cursor.execute(sql, (fecha_real, vale_id ))
 
-                if  fecha_real == None:
-                    print(f"|Actualizando fecha real vale despacho -> {vale_id}")
-                    fecha_real = datetime.now()
-                    sql = "update vale_despacho set fecha_real = %s where vale_id = %s"
-                    cursor.execute(sql, (str(fecha_real), vale_id ))
-
+                if dato[0] == "COMPLETO":
                     # Obtener numero de telefono
                     sql = "select vale_id,telefono from vale_despacho where vale_id = %s"
                     cursor.execute(sql,  vale_id )
@@ -395,10 +397,8 @@ def actualizar_nota_venta():
                     # Enviar plantilla
                     plantilla = "despacho_domicilio_1"
                     enviar_template(plantilla , new_telefono)
-
                 else:
-                    print('|Documento con fecha real -> dado de BAJA.')
-                    print('|No se actualiza la fecha real.\nNo se envia mensaje whatsapp.')
+                    print("No entregado completo. No se envia mensaje whatsap.")
 
 
 
@@ -490,12 +490,48 @@ def actualizar_guia():
                 except KeyError:
                     print(' llave "lista_historial" no encontrado. Historial NO creado')
             
+           
+
             #ACTUALIZAR FECHA REAL VALE DESPACHO
             if vale_id:
                 print("|(DOCUMENTO CON VALE DESPACHO)  Actualizando fecha real vale despacho ...")
-                fecha_real = datetime.now()
+
+                """ Posiblemente si existe fecha real en vale despacho -> documento dado de baja. """
+                # Verificar si existe la fecha real
+                sql = "select vale_id,fecha_real from vale_despacho where vale_id = %s"
+                cursor.execute(sql,  vale_id )
+                respuesta = cursor.fetchone()
+                fecha_real = respuesta[1]
+                print(f"(FECHA REAL) : {fecha_real}")
+                print(f"|Actualizando fecha real vale despacho -> {vale_id}")
+                fecha_real = None
+                if dato[0] == "COMPLETO":
+                    fecha_real = str(datetime.now())
+                print("| new fecha_real: ", fecha_real)
                 sql = "update vale_despacho set fecha_real = %s where vale_id = %s"
-                cursor.execute(sql, (str(fecha_real), vale_id ))
+                cursor.execute(sql, (fecha_real, vale_id ))
+
+                if dato[0] == "COMPLETO":
+                    # Obtener numero de telefono
+                    sql = "select vale_id,telefono from vale_despacho where vale_id = %s"
+                    cursor.execute(sql,  vale_id )
+                    respuesta = cursor.fetchone()
+                    telefono = respuesta[1]
+                    new_telefono = telefono.replace(' ' ,'')
+                    new_telefono = new_telefono.replace('+' ,'')
+
+                    print(f"Telefono : {telefono} | new_telefono: {new_telefono}")
+
+                    # Enviar plantilla
+                    plantilla = "despacho_domicilio_1"
+                    enviar_template(plantilla , new_telefono)
+                else:
+                    print("No entregado completo. No se envia mensaje whatsap.")
+
+                
+
+
+
             else:
                 print("(DOCUMENTO SIN VALE DESPACHO) : NO SE ACTUALIZA FECHA REAL.")
 

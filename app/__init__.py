@@ -20,7 +20,7 @@ def create_app():
     idNumeroTeléfono= app.config["TEST_NUMBER_ID"]
     messenger = WhatsApp(token, idNumeroTeléfono)
     app.messenger = messenger
-    
+
     # Se registran los blueprints
     from .api import api_bp
     print( f'mysql+pymysql://{app.config["USER"]}:{app.config["PASSWORD"]}@{app.config["HOST"]}/{app.config["DB"]}')
